@@ -16,15 +16,18 @@ echo ------------------------------------
 echo
 echo STEP:4 build windows binary
 export GOOS=windows
-go build -o .build/windows/env-on-restapi.exe
-echo STEP:5 windows binary is located at .build/windows/env-on-restapi.exe
+export GOARCH=386
+
+go build -o .build/windows/env-on-restapi-386.exe
+echo STEP:5 windows binary is located at .build/windows/env-on-restapi-386.exe
 
 echo ------------------------------------
 echo
 echo STEP:6 build darwin binary
 export GOOS=darwin
-go build -o .build/mac/env-on-restapi
-echo STEP:7 darwin binary is located at .build/mac/env-on-restapi
+export GOARCH=arm64
+go build -o .build/mac/env-on-restapi-arm64
+echo STEP:7 darwin binary is located at .build/mac/env-on-restapi-arm64
 
 echo ------------------------------------
 echo
