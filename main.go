@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -13,11 +16,10 @@ func main() {
 	var Red = "\033[31m"
 	var Green = "\033[32m"
 	var Yellow = "\033[33m"
-	// var Blue = "\033[34m"
-	// var Purple = "\033[35m"
 	var Cyan = "\033[36m"
-	// var Gray = "\033[37m"
-	// var White = "\033[97m"
+
+	type AppConfigProperties map[string]string
+	config := AppConfigProperties{}
 
 	title := `Sample Code Snippet For Postman Test 🦄
 -------------------------------------------------------------------`
@@ -41,14 +43,37 @@ pm.collectionVariables.set("sessionToken", sessionToken);
 	http.HandleFunc("/aws", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		accessKeyId := os.Getenv("AWS_ACCESS_KEY_ID")
-		secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-		sessionToken := os.Getenv("AWS_SESSION_TOKEN")
+		userHomeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		awsCredPath := filepath.Join(userHomeDir, ".aws", "credentials")
+		file, err := os.Open(awsCredPath)
+
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if equal := strings.Index(line, "="); equal >= 0 {
+				if key := strings.TrimSpace(line[:equal]); len(key) > 0 {
+					value := ""
+					if len(line) > equal {
+						value = strings.TrimSpace(line[equal+1:])
+					}
+					config[key] = value
+				}
+			}
+		}
 
 		data := map[string]interface{}{
-			"accessKeyId":  accessKeyId,
-			"secretKey":    secretKey,
-			"sessionToken": sessionToken,
+			"accessKeyId":  config["aws_access_key_id"],
+			"secretKey":    config["aws_secret_access_key"],
+			"sessionToken": config["aws_session_token"],
 		}
 
 		jsonData, err := json.Marshal(data)
