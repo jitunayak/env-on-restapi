@@ -17,6 +17,16 @@ curl --location 'http://localhost:8088/aws' \
 '
 ```
 
+> sample response
+
+```json
+{
+    "accessKeyId":"HHDUUIEKKED",
+    "secretKey":"Ng4W//WAttR33ugTroNSBQrbsdsdd7PR7QH7O",
+    "sessionToken":"//sddd"
+}
+```
+
 ### generic api to get any ENV variable value
 
 ```bash
@@ -34,7 +44,7 @@ curl --location 'http://localhost:8088/' \
 curl --location 'http://localhost:8088/aws?reAuthenticate=true&interval=5&command=mkdir%newFolder'
 ```
 
-### Only Run A Cron Job
+### Only Run A Cron Job from command line
 
 ```bash
 env-server --server --cron --interval 10 --cmd 'echo jitu'
