@@ -27,3 +27,9 @@ curl --location 'http://localhost:8088/' \
 }
 '
 ```
+
+### Run a cron task example
+
+```bash
+curl --location 'http://localhost:8088/aws?reAuthenticate=true&interval=5&command=mkdir%newFolder'
+```
