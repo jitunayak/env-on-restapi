@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"env-on-restapi/colors"
+	"env-on-restapi/constants"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,6 +24,11 @@ import (
 type AppConfigProperties map[string]string
 
 func main() {
+	shouldStartServer := flag.Bool("server", true, "should start server")
+	interval := flag.Int("interval", 10, "interval for cron job")
+	command := flag.String("cmd", "echo no commands passed to run", "command to run periodically")
+	flag.Parse()
+
 	config := AppConfigProperties{}
 
 	http.HandleFunc("/aws", func(w http.ResponseWriter, r *http.Request) {
@@ -89,12 +97,17 @@ func main() {
 		w.Write(jsonData)
 	})
 
-	fmt.Printf(Red + "Starting server at port 8088 🔥 \n\n")
-	fmt.Println(Cyan + title + Reset)
-	fmt.Println(Yellow + aws_url + Reset)
-	fmt.Println(Green + sample_code + Reset)
-	if err := http.ListenAndServe(":8088", nil); err != nil {
-		log.Fatal(err)
+	if *shouldStartServer {
+		if err := http.ListenAndServe(":8088", nil); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf(colors.Red + "Starting server at port 8088 🔥 \n\n")
+		fmt.Println(colors.Cyan + constants.Title + colors.Reset)
+		fmt.Println(colors.Yellow + constants.Aws_url + colors.Reset)
+		fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
+	} else {
+		fmt.Printf("You are on comman line")
+		startCronJobInShell(*command, *interval)
 	}
 }
 
