@@ -2,7 +2,8 @@ package constants
 
 var Title = `Sample Code Snippet For Postman Test 🦄
 -------------------------------------------------------------------`
-var Aws_url = `GET - http://localhost:8088/aws`
+
+// var Aws_url = `GET - http://localhost:8088/aws`
 var Sample_code = `
 
 	const {accessKeyId, secretKey, sessionToken} = pm.response.json();

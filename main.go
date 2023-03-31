@@ -28,14 +28,19 @@ func main() {
 	cron := flag.Bool("cron", false, "runs cron job")
 	interval := flag.Int("interval", 10, "interval for cron job")
 	command := flag.String("cmd", "echo no commands passed to run", "command to run periodically")
+	portNumber := flag.String("port", "8088", "server port")
 	flag.Parse()
+	port := fmt.Sprintf(":%s", *portNumber)
 
 	if *shouldStartServer {
 		fmt.Println("starting web server")
-		startWebServer()
+		fmt.Printf(colors.Red+"Starting server at port %v 🔥 \n\n", port)
+		fmt.Printf(colors.Yellow+"GET - http://localhost%v/aws"+colors.Reset, port)
+		fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
+		startWebServer(port)
 
 	} else {
-		fmt.Println("You are on command line")
+		fmt.Println("You are on command line. Use eli --help to know all parameters")
 		if *cron {
 			s := gocron.NewScheduler(time.UTC)
 			startCronJobInShell(s, *command, *interval)
@@ -44,7 +49,7 @@ func main() {
 	}
 }
 
-func startWebServer() {
+func startWebServer(port string) {
 
 	config := AppConfigProperties{}
 
@@ -116,13 +121,9 @@ func startWebServer() {
 		w.Write(jsonData)
 	})
 
-	if err := http.ListenAndServe(":8088", nil); err != nil {
+	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf(colors.Red + "Starting server at port 8088 🔥 \n\n")
-	fmt.Println(colors.Cyan + constants.Title + colors.Reset)
-	fmt.Println(colors.Yellow + constants.Aws_url + colors.Reset)
-	fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
 
 }
 func getAwsCredentialFilePath() string {
