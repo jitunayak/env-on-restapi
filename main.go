@@ -37,7 +37,9 @@ func main() {
 	} else {
 		fmt.Println("You are on command line")
 		if *cron {
-			startCronJobInShell(*command, *interval)
+			s := gocron.NewScheduler(time.UTC)
+			startCronJobInShell(s, *command, *interval)
+			s.StartBlocking()
 		}
 	}
 }
@@ -68,7 +70,9 @@ func startWebServer() {
 			if err != nil {
 				panic("interval time is invaliad")
 			}
-			startCronJobInShell(command, intervalNumber)
+			s := gocron.NewScheduler(time.UTC)
+			startCronJobInShell(s, command, intervalNumber)
+			s.StartAsync()
 		}
 
 		config := getAwsConfiguration(config)
@@ -155,14 +159,13 @@ func getAwsConfiguration(config AppConfigProperties) AppConfigProperties {
 	return config
 }
 
-func startCronJobInShell(command string, interval int) {
+func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
 	fmt.Println(colors.Green+"interval: ", interval, "seconds")
 	fmt.Println("command: ", command+colors.Yellow)
-	s := gocron.NewScheduler(time.UTC)
 	if s.IsRunning() {
 		s.Stop()
 	}
-	fmt.Println("\nstarted corn job")
+	fmt.Println("\nstarted corn job" + colors.Reset)
 
 	currentShell := "zsh"
 
@@ -177,8 +180,6 @@ func startCronJobInShell(command string, interval int) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		os.Mkdir("jitu", os.ModePerm)
 
 	})
-	s.StartAsync()
 }
