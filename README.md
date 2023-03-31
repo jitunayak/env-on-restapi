@@ -33,3 +33,9 @@ curl --location 'http://localhost:8088/' \
 ```bash
 curl --location 'http://localhost:8088/aws?reAuthenticate=true&interval=5&command=mkdir%newFolder'
 ```
+
+### Only Run A Cron Job
+
+```bash
+env-server --server --cron --interval 10 --cmd 'echo jitu'
+```

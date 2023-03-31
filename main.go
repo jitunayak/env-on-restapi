@@ -24,10 +24,25 @@ import (
 type AppConfigProperties map[string]string
 
 func main() {
-	shouldStartServer := flag.Bool("server", true, "should start server")
+	shouldStartServer := flag.Bool("server", false, "starts the server")
+	cron := flag.Bool("cron", false, "runs cron job")
 	interval := flag.Int("interval", 10, "interval for cron job")
 	command := flag.String("cmd", "echo no commands passed to run", "command to run periodically")
 	flag.Parse()
+
+	if *shouldStartServer {
+		fmt.Println("starting web server")
+		startWebServer()
+
+	} else {
+		fmt.Println("You are on command line")
+		if *cron {
+			startCronJobInShell(*command, *interval)
+		}
+	}
+}
+
+func startWebServer() {
 
 	config := AppConfigProperties{}
 
@@ -97,20 +112,15 @@ func main() {
 		w.Write(jsonData)
 	})
 
-	if *shouldStartServer {
-		if err := http.ListenAndServe(":8088", nil); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf(colors.Red + "Starting server at port 8088 🔥 \n\n")
-		fmt.Println(colors.Cyan + constants.Title + colors.Reset)
-		fmt.Println(colors.Yellow + constants.Aws_url + colors.Reset)
-		fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
-	} else {
-		fmt.Printf("You are on comman line")
-		startCronJobInShell(*command, *interval)
+	if err := http.ListenAndServe(":8088", nil); err != nil {
+		log.Fatal(err)
 	}
-}
+	fmt.Printf(colors.Red + "Starting server at port 8088 🔥 \n\n")
+	fmt.Println(colors.Cyan + constants.Title + colors.Reset)
+	fmt.Println(colors.Yellow + constants.Aws_url + colors.Reset)
+	fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
 
+}
 func getAwsCredentialFilePath() string {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -146,11 +156,13 @@ func getAwsConfiguration(config AppConfigProperties) AppConfigProperties {
 }
 
 func startCronJobInShell(command string, interval int) {
+	fmt.Println(colors.Green+"interval: ", interval, "seconds")
+	fmt.Println("command: ", command+colors.Yellow)
 	s := gocron.NewScheduler(time.UTC)
 	if s.IsRunning() {
 		s.Stop()
 	}
-	fmt.Println("started corn job")
+	fmt.Println("\nstarted corn job")
 
 	currentShell := "zsh"
 
@@ -165,7 +177,7 @@ func startCronJobInShell(command string, interval int) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// os.Mkdir("jitu", os.ModePerm)
+		os.Mkdir("jitu", os.ModePerm)
 
 	})
 	s.StartAsync()
