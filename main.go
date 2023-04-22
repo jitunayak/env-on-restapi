@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"env-on-restapi/colors"
 	"env-on-restapi/constants"
 	"errors"
 	"os/exec"
@@ -20,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/go-co-op/gocron"
 )
 
@@ -36,11 +36,16 @@ func main() {
 
 	fmt.Println(len(os.Args), os.Args)
 
+	defer color.Unset()
+
 	if *shouldStartServer {
-		fmt.Println("\n🤯 starting blazing fast web server")
-		fmt.Printf(colors.Red+"server started at port %v 🔥 \n\n", port)
-		fmt.Printf(colors.Yellow+"GET - http://localhost%v/aws"+colors.Reset, port)
-		fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
+		red := color.New(color.FgBlue).Add(color.Bold).Add(color.BgYellow)
+
+		red.Printf("\n 🦄 starting blazing fast web server on port %v \n\n", port)
+		// color.Red("server started at port %v 🔥 \n\n", port)
+		color.Yellow("GET - http://localhost%v/aws\n\n", port)
+		color.Black(constants.Title)
+		color.Green(constants.Sample_code)
 		startWebServer(port)
 
 	} else {
@@ -179,12 +184,12 @@ func getCurrentShell() string {
 }
 
 func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
-	fmt.Println(colors.Green+"interval: ", interval, "seconds")
-	fmt.Println("command: ", command+colors.Yellow)
+	color.Green("interval: ", interval, "seconds")
+	color.Green("command: ", command)
 	if s.IsRunning() {
 		s.Stop()
 	}
-	fmt.Println("\nstarted corn job" + colors.Reset)
+	fmt.Println("\nstarted corn job")
 
 	s.Every(interval).Seconds().Do(func() {
 		cmd := exec.Command(getCurrentShell(), "-c", command)

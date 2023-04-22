@@ -1,7 +1,7 @@
 package constants
 
-var Title = `Sample Code Snippet For Postman Test 🦄
--------------------------------------------------------------------`
+var Title = `Sample Code Snippet For Postman Test 📝
+------------------------------------------------------------------------`
 
 // var Aws_url = `GET - http://localhost:8088/aws`
 var Sample_code = `
@@ -18,4 +18,4 @@ var Sample_code = `
 	pm.collectionVariables.set("secretKey", secretKey);
 	pm.collectionVariables.set("sessionToken", sessionToken);
 
--------------------------------------------------------------------`
+------------------------------------------------------------------------`
