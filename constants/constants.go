@@ -7,6 +7,7 @@ var Title = `Sample Code Snippet For Postman Test 🦄
 var Sample_code = `
 
 	const {accessKeyId, secretKey, sessionToken} = pm.response.json();
+
 	// for setting global level variables
 	pm.globals.set("accessKeyId", accessKeyId);
 	pm.globals.set("secretKey", secretKey);

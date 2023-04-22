@@ -6,16 +6,18 @@ import (
 	"encoding/json"
 	"env-on-restapi/colors"
 	"env-on-restapi/constants"
+	"errors"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -32,9 +34,11 @@ func main() {
 	flag.Parse()
 	port := fmt.Sprintf(":%s", *portNumber)
 
+	fmt.Println(len(os.Args), os.Args)
+
 	if *shouldStartServer {
-		fmt.Println("starting web server")
-		fmt.Printf(colors.Red+"Starting server at port %v 🔥 \n\n", port)
+		fmt.Println("\n🤯 starting blazing fast web server")
+		fmt.Printf(colors.Red+"server started at port %v 🔥 \n\n", port)
 		fmt.Printf(colors.Yellow+"GET - http://localhost%v/aws"+colors.Reset, port)
 		fmt.Println(colors.Green + constants.Sample_code + colors.Reset)
 		startWebServer(port)
@@ -126,12 +130,12 @@ func startWebServer(port string) {
 	}
 
 }
+
 func getAwsCredentialFilePath() string {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	awsCredPath := filepath.Join(userHomeDir, ".aws", "credentials")
 	return awsCredPath
 }
@@ -160,6 +164,20 @@ func getAwsConfiguration(config AppConfigProperties) AppConfigProperties {
 	return config
 }
 
+func getCurrentShell() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "powershell"
+	case "darwin":
+		return "zsh"
+	case "linux":
+		return "bash"
+	default:
+		log.Fatal("no shell found to execute command")
+		return ""
+	}
+}
+
 func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
 	fmt.Println(colors.Green+"interval: ", interval, "seconds")
 	fmt.Println("command: ", command+colors.Yellow)
@@ -168,13 +186,8 @@ func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
 	}
 	fmt.Println("\nstarted corn job" + colors.Reset)
 
-	currentShell := "zsh"
-
-	if runtime.GOOS == "windows" {
-		currentShell = "powershell"
-	}
 	s.Every(interval).Seconds().Do(func() {
-		cmd := exec.Command(currentShell, "-c", command)
+		cmd := exec.Command(getCurrentShell(), "-c", command)
 		var out bytes.Buffer
 		cmd.Stdout = &out
 		err := cmd.Run()
@@ -183,4 +196,37 @@ func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
 		}
 
 	})
+}
+
+// ! TODO
+func getEliConfigurationPath() string {
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return filepath.Join("", userHomeDir, ".eli", "configuration")
+}
+
+// ! TODO
+func readConfiguration() {
+
+	if _, err := os.Stat(getEliConfigurationPath()); err == nil {
+		os.ReadFile(getEliConfigurationPath())
+	}
+}
+
+// ! TODO
+func updateConfiguration(config string) {
+
+	if _, err := os.Stat(getEliConfigurationPath()); err == nil {
+
+	} else if errors.Is(err, os.ErrNotExist) {
+		// os.Mkdir(filepath.Join(userHomeDir, ".eli"), os.ModePerm)
+		f, err := os.Create(getAwsCredentialFilePath())
+		if err != nil {
+			log.Fatal(err)
+		}
+		f.WriteString(config)
+		defer f.Close()
+	}
 }
