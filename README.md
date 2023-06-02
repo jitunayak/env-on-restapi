@@ -49,3 +49,31 @@ curl --location 'http://localhost:8088/aws?reAuthenticate=true&interval=5&comman
 ```bash
 env-server --server --cron --interval 10 --cmd 'echo jitu'
 ```
+
+```javascript
+
+pm.sendRequest({
+    url: ' http://localhost:9000',
+    body: JSON.stringify({
+        "AWS_CLI": "AWS_CLI"
+    }),
+    method: 'GET',
+}, function (err, res) {
+    console.log({ res })
+    pm.collectionVariables.set("aws", res.json().AWS_CLI);
+    pm.collectionVariables.set("status_code", pm.response.code);
+    if (pm.response.code === 200) {
+        pm.sendRequest({
+            url: ' http://localhost:9000',
+            body: JSON.stringify({
+                "AWS_CLI": "AWS_CLI"
+            })
+        }, function (err, res){
+            
+        }
+        )
+    }
+ )
+```
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/5113309-5bf23fb5-e054-4f9b-a697-2b80a861ef66?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D5113309-5bf23fb5-e054-4f9b-a697-2b80a861ef66%26entityType%3Dcollection%26workspaceId%3D8dc0e5fa-ee53-4e23-9699-34532bd6a9d7)

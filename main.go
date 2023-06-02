@@ -31,6 +31,7 @@ func main() {
 	interval := flag.Int("interval", 10, "interval for cron job")
 	command := flag.String("cmd", "echo no commands passed to run", "command to run periodically")
 	portNumber := flag.String("port", "8088", "server port")
+	shell := flag.String("shell", getCurrentShell(), "e.g. bash, powershell")
 	flag.Parse()
 	port := fmt.Sprintf(":%s", *portNumber)
 
@@ -52,7 +53,7 @@ func main() {
 		fmt.Println("You are on command line. Use eli --help to know all parameters")
 		if *cron {
 			s := gocron.NewScheduler(time.UTC)
-			startCronJobInShell(s, *command, *interval)
+			startCronJobInShell(s, *command, *interval, *shell)
 			s.StartBlocking()
 		}
 	}
@@ -66,8 +67,10 @@ func startWebServer(port string) {
 		w.Header().Set("Content-Type", "application/json")
 
 		shoudlReAuthenticate := r.URL.Query().Get("reAuthenticate")
-		interval := r.URL.Query().Get("interval")
+		interval := r.URL.Query().Get("interval") //Interval in seconds
 		command := r.URL.Query().Get("command")
+		readType := r.URL.Query().Get("readType") //Optional Default value is file.All Possible Values 'file' | 'env'
+		shell := r.URL.Query().Get("shell")       //Optional
 
 		if shoudlReAuthenticate == "" {
 			shoudlReAuthenticate = "false"
@@ -78,6 +81,12 @@ func startWebServer(port string) {
 		if command == "" && shoudlReAuthenticate == "true" {
 			http.Error(w, "command is missing to authenticate", http.StatusBadRequest)
 		}
+		if readType == "" {
+			readType = "file"
+		}
+		if shell == "" {
+			shell = getCurrentShell()
+		}
 
 		if shoudlReAuthenticate == "true" {
 			intervalNumber, err := strconv.Atoi(interval)
@@ -85,23 +94,43 @@ func startWebServer(port string) {
 				panic("interval time is invaliad")
 			}
 			s := gocron.NewScheduler(time.UTC)
-			startCronJobInShell(s, command, intervalNumber)
+			startCronJobInShell(s, command, intervalNumber, shell)
 			s.StartAsync()
 		}
 
-		config := getAwsConfiguration(config)
-		data := map[string]interface{}{
-			"accessKeyId":  config["aws_access_key_id"],
-			"secretKey":    config["aws_secret_access_key"],
-			"sessionToken": config["aws_session_token"],
+		if shoudlReAuthenticate == "false" && command != "" {
+			fmt.Println("running on shell")
+			runOnShell(command, shell)
 		}
 
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			fmt.Printf("could not marshal json: %s\n", err)
-			return
+		if readType == "file" {
+			config := getAwsConfiguration(config)
+			data := map[string]interface{}{
+				"accessKeyId":  config["aws_access_key_id"],
+				"secretKey":    config["aws_secret_access_key"],
+				"sessionToken": config["aws_session_token"],
+			}
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				fmt.Printf("could not marshal json: %s\n", err)
+				return
+			}
+			w.Write(jsonData)
 		}
-		w.Write(jsonData)
+		if readType == "env" {
+			data := map[string]interface{}{
+				"accessKeyId":  os.Getenv("AWS_ACCESS_KEY_ID"),
+				"secretKey":    os.Getenv("AWS_SECRET_ACCESS_KEY"),
+				"sessionToken": os.Getenv("AWS_SESSION_TOKEN"),
+			}
+
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				fmt.Printf("could not marshal json: %s\n", err)
+				return
+			}
+			w.Write(jsonData)
+		}
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +212,17 @@ func getCurrentShell() string {
 	}
 }
 
-func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
+func runOnShell(command string, shell string) {
+	cmd := exec.Command(shell, "-c", command)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func startCronJobInShell(s *gocron.Scheduler, command string, interval int, shell string) {
 	color.Green("interval: ", interval, "seconds")
 	color.Green("command: ", command)
 	if s.IsRunning() {
@@ -192,13 +231,7 @@ func startCronJobInShell(s *gocron.Scheduler, command string, interval int) {
 	fmt.Println("\nstarted corn job")
 
 	s.Every(interval).Seconds().Do(func() {
-		cmd := exec.Command(getCurrentShell(), "-c", command)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		err := cmd.Run()
-		if err != nil {
-			log.Fatal(err)
-		}
+		runOnShell(command, shell)
 
 	})
 }
