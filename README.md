@@ -13,6 +13,22 @@ docker push <username>/<image-name>:latest
 
 ## usage
 
+
+>eli --help (shows all the available command line arguments)
+
+### Start the Server
+
+```bash
+eli -server
+```
+### Only Run A Cron Job from command line
+
+```bash
+eli --cron --interval 10 --cmd 'echo jitu'
+```
+
+
+
 ### get aws assume role credentials
 
 ```bash
@@ -47,16 +63,4 @@ curl --location 'http://localhost:8088/' \
 ```bash
 curl --location 'http://localhost:8088/aws?reAuthenticate=true&interval=5&command=mkdir%newFolder'
 ```
-### Start the Server
-
-```bash
-eli -server
-```
-### Only Run A Cron Job from command line
-
-```bash
-eli --cron --interval 10 --cmd 'echo jitu'
-```
-
->eli --help (shows all the available command line arguments)
 
