@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"env-on-restapi/constants"
 	"errors"
+	"math/rand"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -19,11 +20,22 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/fatih/color"
 	"github.com/go-co-op/gocron"
 )
 
+var API_KEY string = ""
+
 type AppConfigProperties map[string]string
+
+func randomString(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, length+2)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)[2 : length+2]
+
+}
 
 func main() {
 	shouldStartServer := flag.Bool("server", false, "starts the server")
@@ -40,12 +52,15 @@ func main() {
 	defer color.Unset()
 
 	if *shouldStartServer {
-		red := color.New(color.FgBlue).Add(color.Bold).Add(color.BgYellow)
+		bgYellow := color.New(color.FgWhite).Add(color.Bold).Add(color.BgYellow)
 
-		red.Printf("\n 🦄 starting blazing fast web server on port %v \n\n", port)
+		API_KEY = string(randomString(40))
+		clipboard.WriteAll(API_KEY)
+		// bgYellow.Printf("\n 🦄 starting blazing fast web server on port %v \n\n", port)
 		// color.Red("server started at port %v 🔥 \n\n", port)
-		color.Yellow("GET - http://localhost%v/aws\n\n", port)
-		color.Black(constants.Title)
+		color.Yellow("GET - http://localhost%v/aws\n", port)
+		bgYellow.Printf("API KEY: %v\n", API_KEY)
+		color.White(constants.Title)
 		color.Green(constants.Sample_code)
 		startWebServer(port)
 
@@ -66,11 +81,21 @@ func startWebServer(port string) {
 	http.HandleFunc("/aws", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		userKey := r.Header.Get("API-KEY")
+		if userKey == "" {
+			http.Error(w, "API-KEY missing from header", http.StatusBadRequest)
+			return
+		}
+		if userKey != API_KEY {
+			http.Error(w, "API-KEY incorrect from header", http.StatusBadRequest)
+			return
+		}
 		shoudlReAuthenticate := r.URL.Query().Get("reAuthenticate")
 		interval := r.URL.Query().Get("interval") //Interval in seconds
 		command := r.URL.Query().Get("command")
 		readType := r.URL.Query().Get("readType") //Optional Default value is file.All Possible Values 'file' | 'env'
 		shell := r.URL.Query().Get("shell")       //Optional
+		// catchTime := r.URL.Query().Get("catchTime")
 
 		if shoudlReAuthenticate == "" {
 			shoudlReAuthenticate = "false"
@@ -99,7 +124,6 @@ func startWebServer(port string) {
 		}
 
 		if shoudlReAuthenticate == "false" && command != "" {
-			fmt.Println("running on shell")
 			runOnShell(command, shell)
 		}
 
@@ -213,6 +237,7 @@ func getCurrentShell() string {
 }
 
 func runOnShell(command string, shell string) {
+	log.Printf("running : %s", command)
 	cmd := exec.Command(shell, "-c", command)
 	var out bytes.Buffer
 	cmd.Stdout = &out
